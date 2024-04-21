@@ -31,7 +31,6 @@ class stego {
         void extract_wav();
 
 
-
         //Helper functions
         void fetch_input();  // Gets input from file to input buffer
         void fetch_message(); // Gets message from file to message buffer
@@ -45,11 +44,11 @@ class stego {
         void print_input();
         //for testing/debug purposes, prints the input buffer to stdout
 
-
         void check_ce(); // Check if the hidden message is compressed and/or encrypted
 
         //NOTE: we might make more functions later as well, eg. to copy the message buffer to output/input directly etc.
     
+
     private:
         int is_compressed;
         int is_encrypted;
@@ -59,25 +58,6 @@ class stego {
         stringstream input_buffer;
         stringstream message_buffer;
         stringstream output_buffer;
-
-
-
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif
