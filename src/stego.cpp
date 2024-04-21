@@ -1,7 +1,7 @@
-#include <exception>
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include "../include/stego_main.h"
 using namespace std;
 
 #include <boost/program_options.hpp>
@@ -62,27 +62,56 @@ int main(int ac, char* av[]) {
     string output_path;
     int do_encrypt = vm.count("encrypt");
     int do_compress = vm.count("compress");
+    vector<string> file_paths;
 
 
     // Check that all 3 parameters are provided for hide file function
     if (func == 1) {
-        if (vm.count("input-file")) input_path = vm["input-file"].as<string>();
+        if (vm.count("input-file")) {
+            input_path = vm["input-file"].as<string>();
+            file_paths.push_back(input_path);
+        }
         else throw runtime_error("No input file path!");
 
-        if (vm.count("input-message")) message_path = vm["input-message"].as<string>();
-        else throw runtime_error("No input message file path!");
-
-        if (vm.count("output-file")) output_path = vm["output-file"].as<string>();
+        if (vm.count("output-file")) {
+            output_path = vm["output-file"].as<string>();
+            file_paths.push_back(output_path);
+        }
         else throw runtime_error("No output file path!");
+
+        if (vm.count("input-message")) {
+            message_path = vm["input-message"].as<string>();
+            file_paths.push_back(message_path);
+        }
+        else throw runtime_error("No input message file path!");
     }
 
     // Same as above, but for extract file 
     else if (func == 2) {
-        if (vm.count("input-file")) input_path = vm["input-file"].as<string>();
+        if (vm.count("input-file")) {
+            input_path = vm["input-file"].as<string>();
+            file_paths.push_back(input_path);
+        }
         else throw runtime_error("No input file path!");
 
-        if (vm.count("output-file")) output_path = vm["output-file"].as<string>();
+        if (vm.count("output-file")) {
+            output_path = vm["output-file"].as<string>();
+            file_paths.push_back(output_path);
+        }
         else throw runtime_error("No output file path!");
+    }
+
+    //Instantiate an instance of the main class
+    stego stegosaurus(file_paths, do_encrypt, do_compress);
+
+
+    // Run hide/extract depending on function
+    if (func == 1) {
+        stegosaurus.hide();
+    }
+
+    else if (func == 2) {
+        stegosaurus.extract();
     }
 
 

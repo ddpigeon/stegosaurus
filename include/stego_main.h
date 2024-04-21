@@ -42,8 +42,13 @@ class stego {
         // 2 = wav
         // 0 = other
 
+        void print_input();
+        //for testing/debug purposes, prints the input buffer to stdout
 
 
+        void check_ce(); // Check if the hidden message is compressed and/or encrypted
+
+        //NOTE: we might make more functions later as well, eg. to copy the message buffer to output/input directly etc.
     
     private:
         int is_compressed;
