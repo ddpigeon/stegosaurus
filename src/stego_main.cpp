@@ -15,8 +15,8 @@ stego::stego(vector<string> &files, int encrypt, int compress) {
     // files = {input, output, message}
     // message may/may not be there
 
-    is_compressed = compress;
-    is_encrypted = encrypt;
+    compression_bit = compress;
+    encryption_bit = encrypt;
 
     input_path = files[0];
     output_path = files[1];
@@ -32,8 +32,8 @@ void stego::hide() {
 
     // Order of running is compress -> encrypt -> hide
 
-    if (is_compressed) compress();  
-    if (is_encrypted) AESencrypt();
+    if (compression_bit) compress();  
+    if (encryption_bit) AESencrypt();
 
     if (check_if_wav_or_png(input_path) == 1) hide_png();
     else if (check_if_wav_or_png(input_path) == 2) hide_wav();
@@ -48,8 +48,8 @@ void stego::extract() {
     if (check_if_wav_or_png(input_path) == 1) extract_png();
     else if (check_if_wav_or_png(input_path) == 2) extract_wav();
 
-    if (is_encrypted) AESdecrypt();
-    if (is_compressed) decompress();
+    if (encryption_bit) AESdecrypt();
+    if (compression_bit) decompress();
 }
 
 
@@ -80,7 +80,7 @@ void stego::write_output() {
 void stego::fetch_input() {
     // Reads from input file to input buffer
 
-    cout << input_path << endl;
+    //cout << input_path << endl;
     ifstream inputfile(input_path, ios::binary);
     if (inputfile) {
         input_buffer << inputfile.rdbuf();

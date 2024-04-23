@@ -50,8 +50,8 @@ class stego {
     
 
     private:
-        int is_compressed;
-        int is_encrypted;
+        bool compression_bit; //Equals 1 in case we should compress / message is compressed
+        bool encryption_bit; // Equals 1 in case we should encrypt / message is encrypted
         string input_path;
         string message_path;
         string output_path;
