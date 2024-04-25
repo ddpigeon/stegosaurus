@@ -66,7 +66,10 @@ unsigned char* Rcon(int a){
 }
 
 unsigned char* KeyExpansion(unsigned char* key){
-    unsigned char a[44][4];
+    unsigned char **a = new unsigned char*[44];
+        for(int i = 0; i < 44; ++i) {
+            a[i] = new unsigned char[4];
+        }
     int s = 0;
     for(int i = 0;i<4;i++){
         for(int j = 0;j<4;j++){
@@ -105,38 +108,14 @@ unsigned char* KeyExpansion(unsigned char* key){
                 a[i][j] = b[j];
             }
         }
-        return a;
+    
     }
-
-
-
-
+    return *a;
 }
-
-unsigned char* roundKey(unsigned char* key){
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 int main(int argc, char const *argv[]) {
-    unsigned char a[4] = {'3', '4', 'c', '6'};
+    /*unsigned char a[4] = {'3', '4', 'c', '6'};
     RotWord(a);
     for(int i = 0; i < 4; i++) {
         cout << a[i];
@@ -154,7 +133,18 @@ int main(int argc, char const *argv[]) {
     unsigned char* c = Rcon(12);
     for(int i = 0; i < 4; i++){
         cout << hex << (int)c[i] << " ";
+    }*/    
+
+    unsigned char key[16]= {0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c};
+
+    unsigned char* expKey = KeyExpansion(key);
+
+    for(int i = 0;i<44;i++){
+        
+            cout<< expKey[i];
+        
     }
+
 
     return 0;
 }

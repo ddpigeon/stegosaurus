@@ -82,7 +82,7 @@ unsigned char** KeyExpansion(unsigned char* key) {
             a[i][j] = key[s];
             s++;
         }
-    }
+    }    
 
     for(int i = 4; i < 44; i++) {
         int round = i / 4;
@@ -94,10 +94,13 @@ unsigned char** KeyExpansion(unsigned char* key) {
             RotWord(b);
             SubWord(b);
             unsigned char* c = Rcon(round);
-            for(int j = 0; j < 4; j++) {
-                b[j] ^= a[i-4][j] ^ c[j];
+            for(int j = 0;j<4;j++){
+                b[j] = b[j] ^ a[i-4][j];
             }
-            for(int j = 0; j < 4; j++) {
+            for(int j = 0;j<4;j++){
+               b[j] = b[j] ^ c[j];
+            }
+            for(int j = 0;j<4;j++){
                 a[i][j] = b[j];
             }
         } else {
@@ -106,7 +109,28 @@ unsigned char** KeyExpansion(unsigned char* key) {
             }
         }
     }
-    return a;
+    unsigned char *temp = new unsigned char[176];
+    int k = 0;
+    for(int i = 0;i<44;i++){
+        for(int j = 0;j<4;j++){
+            temp[k] = a[i][j];
+            k++;
+        }
+    }
+
+    unsigned char **b = new unsigned char*[44];
+    for(int i = 0; i < 11; ++i) {
+        b[i] = new unsigned char[16];
+    }  
+    int l = 0;
+    for(int i = 0;i<11;i++){
+        for(int j = 0;j<16;j++){
+            b[i][j] = temp[l];
+            l++;
+        }
+    }
+      
+    return b;
 }
 
 int main(int argc, char const *argv[]) {
@@ -115,18 +139,11 @@ int main(int argc, char const *argv[]) {
 
     // Use expKey for further processing
 
-    /*for(int i =0;i<11;i++){
+    for(int i = 0;i<11;i++){
         for(int j = 0;j<16;j++){
-            cout<<hex<<expKey[i][j];
+            cout<< "0x"<<setfill('0')<<setw(2)<<hex<<(int)expKey[i][j]<<" ";
         }
         cout<<endl;
-    }*/
-
-     for (int i = 0; i < 11; i++) {
-        for (int j = 0; j < 16; j++) {
-            cout << "0x" << setfill('0') << setw(2) << hex << (int)expKey[i][j] << " ";
-        }
-        cout << endl;
     }
 
     // Free allocated memory
