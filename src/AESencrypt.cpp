@@ -1,5 +1,5 @@
 #include "../include/stego_main.h"
-
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -101,24 +101,79 @@ void SubWord(unsigned char* a){
     }
 }
 
-void Rcon(){}
-
-
-void KeyExpansionCore(unsigned char* in, unsigned char i){
-    unsigned int* q = (unsigned int*)in;
-    *q = (*q >> 8) | ((*q & 0xff) << 24);
-
-    in[0] = sBox[in[0]];
-    in[1] = sBox[in[1]];
-    in[2] = sBox[in[2]];
-    in[3] = sBox[in[3]];
-        
-
+unsigned char* Rcon(int a){
+    unsigned char* b = new unsigned char[4];
+    b[0] = rcon[a];
+    b[1] = 0x00;
+    b[2] = 0x00;
+    b[3] = 0x00;
+    return b;
 }
 
-void keyExpansion(){
 
+
+unsigned char** KeyExpansion(unsigned char* key) {
+    unsigned char **a = new unsigned char*[44];
+    for(int i = 0; i < 44; ++i) {
+        a[i] = new unsigned char[4];
+    }
+    int s = 0;
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            a[i][j] = key[s];
+            s++;
+        }
+    }    
+
+    for(int i = 4; i < 44; i++) {
+        int round = i / 4;
+        if(i % 4 == 0) {
+            unsigned char b[4];
+            for(int j = 0; j < 4; j++) {
+                b[j] = a[i-1][j];
+            }
+            RotWord(b);
+            SubWord(b);
+            unsigned char* c = Rcon(round);
+            for(int j = 0;j<4;j++){
+                b[j] = b[j] ^ a[i-4][j];
+            }
+            for(int j = 0;j<4;j++){
+               b[j] = b[j] ^ c[j];
+            }
+            for(int j = 0;j<4;j++){
+                a[i][j] = b[j];
+            }
+        } else {
+            for(int j = 0; j < 4; j++) {
+                a[i][j] = a[i-1][j] ^ a[i-4][j];
+            }
+        }
+    }
+    unsigned char *temp = new unsigned char[176];
+    int k = 0;
+    for(int i = 0;i<44;i++){
+        for(int j = 0;j<4;j++){
+            temp[k] = a[i][j];
+            k++;
+        }
+    }
+
+    unsigned char **b = new unsigned char*[44];
+    for(int i = 0; i < 11; ++i) {
+        b[i] = new unsigned char[16];
+    }  
+    int l = 0;
+    for(int i = 0;i<11;i++){
+        for(int j = 0;j<16;j++){
+            b[i][j] = temp[l];
+            l++;
+        }
+    }
+      
+    return b;
 }
+
 
 void SubBytes(unsigned char* state){
     for(int i = 0; i<16;i++){
@@ -192,21 +247,26 @@ void stego::AESencrypt(){
     }
 
     int numRounds = 1;
+    unsigned char key[16];
+    for(int i = 0;i<16;i++){
+        cin>>key[i];
+    }
 
-    keyExpansion();
-    AddRoundKey();
+
+    KeyExpansion(key);
+    //AddRoundKey();
     //the intermediate rounds
     for(int i = 0;i<numRounds;i++){
         SubBytes(state);
         ShiftRows(state);
         MixColumns(state);
-        AddRoundKey();
+        //AddRoundKey();
     }
 
     //final round- omitted MixColumn()
     SubBytes(state);
     ShiftRows(state);
-    AddRoundKey();
+    //AddRoundKey();
     for(int i = 0;i<16;i++){
         message[i] = state[i];
     }
