@@ -1,4 +1,5 @@
 #include "../include/stego_main.h"
+#include <cstring>
 #include <iostream>
 /* AES Decryption follows an algorithm much like the AES Encryption algorithm.
  *
@@ -10,8 +11,8 @@ namespace AES{
 		public:
 			//Declaration of look up tables
 
-			Decrypter() = delete;
-			Decryptor(unsigned char *messageSetter, unsigned char *keySetter) : key{keySetter}, message{messageSetter}
+			Decryptor() = delete;
+			Decryptor(unsigned char *cipherTextSetter,unsigned char *initializationVectorSetter, unsigned char *keySetter) : cipherText{cipherTextSetter}, key{keySetter}, blocksDecrypted{0}, initializationVector{initializationVectorSetter}
 			{
 				words = new unsigned char*[44];
 				for(size_t i = 0;i<44;i++){
@@ -28,7 +29,9 @@ namespace AES{
 
 
 			unsigned char *key;
-			unsigned char *message;
+			unsigned char *initializationVector;
+			unsigned char *cipherText;
+			unsigned char *plainText;
 
 			static const unsigned char s_box[256];
 			static const unsigned char inverse_s_box[256];
@@ -50,10 +53,13 @@ namespace AES{
 			unsigned char *inverseMixColumns(unsigned char *state);
 
 			//AES Decrypt Functions
-			void AESdecrypt();
+			void decryptCipherBlock(unsigned char *cipherBlock, unsigned char *chain);
+			void removePkcsPadding(unsigned char *plainText);
+			void decryptCipher();
 
 		private:
 			unsigned char **words;
+			int blocksDecrypted;
 	};
 }
 
@@ -137,7 +143,7 @@ const unsigned char AES::Decryptor::mul11[256] = {
     0xca, 0xc1, 0xdc, 0xd7, 0xe6, 0xed, 0xf0, 0xfb, 0x92, 0x99, 0x84, 0x8f, 0xbe, 0xb5, 0xa8, 0xa3
 };
 
-const unsigned char AES::Decrypter::mul13[256] = {
+const unsigned char AES::Decryptor::mul13[256] = {
     0x00, 0x0d, 0x1a, 0x17, 0x34, 0x39, 0x2e, 0x23, 0x68, 0x65, 0x72, 0x7f, 0x5c, 0x51, 0x46, 0x4b,
     0xd0, 0xdd, 0xca, 0xc7, 0xe4, 0xe9, 0xfe, 0xf3, 0xb8, 0xb5, 0xa2, 0xaf, 0x8c, 0x81, 0x96, 0x9b,
     0xbb, 0xb6, 0xa1, 0xac, 0x8f, 0x82, 0x95, 0x98, 0xd3, 0xde, 0xc9, 0xc4, 0xe7, 0xea, 0xfd, 0xf0,
@@ -252,7 +258,7 @@ unsigned char* AES::Decryptor::addRoundKey(unsigned char *state, int roundNumber
 
 	for (int i = 0; i < 4;i++){
 		for (int j = 0; j < 4;j++){
-			state[i * 4 + j] ^= words[inverseRoundNumber * 4 + i];
+			state[i * 4 + j] ^= words[inverseRoundNumber * 4 + i][j];
 		}
 	}
 
@@ -302,20 +308,77 @@ unsigned char* AES::Decryptor::inverseMixColumns(unsigned char *state){
 		mixedState[i*4+3] = static_cast<unsigned char>(aes::mul11[state[i*4]] ^ aes::mul13[state[i*4+1]] ^ aes::mul9[state[i*4+2]] ^ aes::mul14[state[i*4+3]]);
 	}
 
-	return mixedState;
+	for (size_t i = 0; i < 16;i++){
+		state[i] = mixedState[i];
+	}
+
+	return state;
+}
+
+void AES::Decryptor::decryptCipherBlock(unsigned char *cipherBlock, unsigned char *chain){
+	addRoundKey(cipherBlock, 0); // Add Round Key Initially (Key 11 in the expanded keys set)
+	for (size_t round_no = 1; round_no < 10; round_no++)
+	{
+		inverseMixColumns(addRoundKey(inverseSubBytes(inverseShiftRows(cipherBlock)), round_no));
+	}
+	addRoundKey(inverseSubBytes(inverseShiftRows(cipherBlock)), 10); // Final Round without the InverseMixColumns
+	// cipherBlock has been decrypted through the AES key;
+
+	// Running the XOR with the previous block in the chain;
+	for (size_t i = 0; i < 16; i++){
+		plainText[blocksDecrypted * 16 + i] = cipherBlock[i] ^ chain[i];
+	}
+	for (size_t i = 0; i < 16; i++){
+		std::cout << static_cast<char>(plainText[blocksDecrypted * 16 + i]);
+	}
+	blocksDecrypted++;
+}
+
+void AES::Decryptor::removePkcsPadding(unsigned char *plainText){
+	int bytesOffsetForLastBlock = (blocksDecrypted-1)*16;
+	unsigned char pkcsIdentifier = plainText[bytesOffsetForLastBlock+15];
+	size_t startingIndex = pkcsIdentifier;
+	startingIndex %= 16;
+	for (size_t i = bytesOffsetForLastBlock + startingIndex; i < bytesOffsetForLastBlock + 16;i++){
+		plainText[i] = 0x00;
+	}
+}
+
+void AES::Decryptor::decryptCipher(){
+	size_t numberOfBlocks = sizeof cipherText / sizeof cipherText[0];
+
+	unsigned char *block = new unsigned char[16];
+
+	for (size_t i = 0; i < 16;i++){
+		block[i] = cipherText[i];
+	}
+	
+	decryptCipherBlock(block, initializationVector);
+	for (size_t i = 1; i < numberOfBlocks; i++)
+	{
+		unsigned char *prevBlock = new unsigned char[16];
+		for (size_t j = 0; j < 16; j++)
+		{
+			prevBlock[j] = cipherText[(i - 1) * 16 + j];
+			block[j] = cipherText[i * 16 + j];
+		}
+
+		decryptCipherBlock(block, prevBlock);
+	}
 }
 
 void stego::AESdecrypt() {
 	// Implement AES decryption here
 }
 
-void AESdecrypt(unsigned char *cipher, unsigned char *key){
-	
-}
+
 
 int main(){
-	unsigned char message[] = {"Two One Nine Two"};
-	unsigned char key[] = {"Thats my Kung Fu"};
-	AES::Decryptor *decryptor = new AES::Decryptor(message, key);
+	unsigned char cipherText[] = {
+		0x00, 0x40, 0x84, 0xbc, 0xf3, 0xbe, 0x6f, 0x05, 0xf9, 0xa0, 0xbb, 0xd3, 0xfc, 0xcd, 0xc8, 0x9b, 0xd4, 0x9c, 0x03, 0x0f, 0xf0, 0xe0, 0x69, 0x81, 0xa1, 0xf7, 0xcf, 0x8c, 0x22, 0x0a, 0x21, 0x09};
+	unsigned char key[] = {"aesEncryptionKey"};
+	unsigned char iv[] = {"encryptionIntVec"};
+	AES::Decryptor *decryptor = new AES::Decryptor(cipherText, key, iv);
 	decryptor->keyExpansion();
+	decryptor->decryptCipher();
 }
