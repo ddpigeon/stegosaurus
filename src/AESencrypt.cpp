@@ -362,15 +362,18 @@ void stego::AESencrypt(){
             messageArr[i][j] = state[j];
         }
         
-        }
+    }
+    //encryption of remaining blocks ends
 
+    //pushing array contents into message string
     k = 0;
     for(int i = 0;i<l;i++){
         for(int j = 0;j<16;j++){
             message[k] = messageArr[i][j];
             k++;
         }
-    }      
+    }  
+    //push message onto message buffer   
     
     message_buffer<<message;
 }
