@@ -112,11 +112,6 @@ unsigned char* Rcon(int a){
 }
 
 
-void messagePad(){
-
-
-}
-
 
 unsigned char* KeyExpansion(unsigned char* key,int round) {
     unsigned char **a = new unsigned char*[44];
@@ -259,7 +254,16 @@ void stego::AESencrypt(){
     
     string message;
     message_buffer>>message;
-    
+
+    //taking key from user
+    int numRounds = 10;
+    unsigned char key[16];
+    for(int i = 0;i<16;i++){
+        cin>>key[i];
+    }; 
+
+
+       
 
     //padding
     int l;
@@ -268,23 +272,43 @@ void stego::AESencrypt(){
         message = message + char(l);
     }
 
-    
-    unsigned char state[16];
-    for(int i = 0;i<16;i++){
-        state[i] = message[i];
+    //created 2d array for storing message as blocks of 16bytes each
+    l = (message.length())/16;
+    int k  = 0;
+    unsigned char** messageArr = new unsigned char*[l];
+    for(int i = 0;i<l;i++){
+        messageArr[i] = new unsigned char[16];
+    }
+    //filled 2d array with the message
+    for(int i = 0;i<l;i++){
+        for(int j = 0;j<16;j++){
+            messageArr[i][j] = message[k];
+            k++;
+        }
     }
 
-    int numRounds = 10;
-    unsigned char key[16];
+    //initialization vector for cbc
+    unsigned char iv[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+
+    //xor initialization vector with first message block
+
     for(int i = 0;i<16;i++){
-        cin>>key[i];
-    };   
+        messageArr[0][i] ^= iv[i];
+    } 
+
+
+    //encrypt first block
+    unsigned char state[16];
+    for(int i = 0;i<16;i++){
+        state[i] = messageArr[0][i];
+    }
+  
 
     //initial round
     AddRoundKey(state,key,0);
 
     //the intermediate rounds
-    for(int i = 1;i<=numRounds;i++){
+    for(int i = 1;i<numRounds;i++){
         SubBytes(state);
         ShiftRows(state);
         MixColumns(state);
@@ -294,10 +318,60 @@ void stego::AESencrypt(){
     //final round- omitted MixColumn()
     SubBytes(state);
     ShiftRows(state);
-    //AddRoundKey();
+    AddRoundKey(state,key,10);
     for(int i = 0;i<16;i++){
-        message[i] = state[i];
+        messageArr[0][i] = state[i];
     }
+
+    //encryption of first block ends
+
+
+
+    //encrypt remaining blocks
+
+    for(int i = 1;i<l;i++){
+
+        unsigned char state[16];
+    
+
+        for(int j = 0;j<16;j++){
+            messageArr[i][j] ^= messageArr[i-1][j];
+
+        }
+
+        for(int j = 0;j<16;j++){
+            state[j] = messageArr[i][j];
+        }  
+
+    //initial round
+        AddRoundKey(state,key,0);
+
+    //the intermediate rounds
+        for(int j = 1;j<numRounds;j++){
+            SubBytes(state);
+           ShiftRows(state);
+            MixColumns(state);
+            AddRoundKey(state,key,i);
+        }   
+
+    //final round- omitted MixColumn()
+        SubBytes(state);
+        ShiftRows(state);
+        AddRoundKey(state,key,10);
+        for(int j = 0;j<16;j++){
+            messageArr[i][j] = state[j];
+        }
+        
+        }
+
+    k = 0;
+    for(int i = 0;i<l;i++){
+        for(int j = 0;j<16;j++){
+            message[k] = messageArr[i][j];
+            k++;
+        }
+    }      
+    
     message_buffer<<message;
 }
 
