@@ -12,7 +12,7 @@ namespace AES{
 			//Declaration of look up tables
 
 			Decryptor() = delete;
-			Decryptor(unsigned char *cipherTextSetter,unsigned char *initializationVectorSetter, unsigned char *keySetter) : cipherText{cipherTextSetter}, key{keySetter}, blocksDecrypted{0}, initializationVector{initializationVectorSetter}
+			Decryptor(unsigned char *cipherTextSetter,unsigned char *initializationVectorSetter, unsigned char *keySetter,size_t blocksSetter) : cipherText{cipherTextSetter}, key{keySetter}, blocksDecrypted{0}, initializationVector{initializationVectorSetter}, blocks{blocksSetter}
 			{
 				words = new unsigned char*[44];
 				for(size_t i = 0;i<44;i++){
@@ -27,11 +27,11 @@ namespace AES{
 				delete[] words;
 			}
 
-
 			unsigned char *key;
 			unsigned char *initializationVector;
 			unsigned char *cipherText;
-			unsigned char *plainText;
+			size_t blocks;
+			vector<unsigned char> plainText;
 
 			static const unsigned char s_box[256];
 			static const unsigned char inverse_s_box[256];
@@ -50,16 +50,16 @@ namespace AES{
 			unsigned char* addRoundKey(unsigned char *state, int key);
 			unsigned char* inverseSubBytes(unsigned char *state);
 			unsigned char* inverseShiftRows(unsigned char *state);
-			unsigned char *inverseMixColumns(unsigned char *state);
+			unsigned char* inverseMixColumns(unsigned char *state);
 
 			//AES Decrypt Functions
 			void decryptCipherBlock(unsigned char *cipherBlock, unsigned char *chain);
-			void removePkcsPadding(unsigned char *plainText);
+			void removePkcsPadding();
 			void decryptCipher();
 
 		private:
 			unsigned char **words;
-			int blocksDecrypted;
+			size_t blocksDecrypted;
 	};
 }
 
@@ -242,15 +242,6 @@ void AES::Decryptor::keyExpansion(){
 
 		wordsGenerated++;
 	}
-
-	for(size_t i = 0;i<44;i++){
-		if(i%4==0)
-			std::cout << std::endl;
-		for (size_t j = 0; j < 4; j++)
-		{
-			std::cout<<std::hex<<(0xFF & words[i][j])<<" ";
-		}
-	}
 }
 
 unsigned char* AES::Decryptor::addRoundKey(unsigned char *state, int roundNumber){
@@ -262,6 +253,7 @@ unsigned char* AES::Decryptor::addRoundKey(unsigned char *state, int roundNumber
 		}
 	}
 
+	// printer(state);
 	return state;
 }
 
@@ -269,7 +261,7 @@ unsigned char* AES::Decryptor::inverseSubBytes(unsigned char *state){
 	for (size_t i = 0; i < 16;i++){
 		state[i] = inverse_s_box[state[i]];
 	}
-
+	// printer(state);
 	return state;
 }
 
@@ -293,7 +285,12 @@ unsigned char* AES::Decryptor::inverseShiftRows(unsigned char *state){
 	shiftedState[14] = state[6];
 	shiftedState[15] = state[3];
 
-	return shiftedState;
+	for(size_t i = 0;i<16;i++){
+		state[i] = shiftedState[i];
+	}
+
+	// printer(state);
+	return state;
 }
 
 unsigned char* AES::Decryptor::inverseMixColumns(unsigned char *state){
@@ -312,11 +309,13 @@ unsigned char* AES::Decryptor::inverseMixColumns(unsigned char *state){
 		state[i] = mixedState[i];
 	}
 
+	// printer(state);
 	return state;
 }
 
 void AES::Decryptor::decryptCipherBlock(unsigned char *cipherBlock, unsigned char *chain){
 	addRoundKey(cipherBlock, 0); // Add Round Key Initially (Key 11 in the expanded keys set)
+	// printer(cipherBlock);
 	for (size_t round_no = 1; round_no < 10; round_no++)
 	{
 		inverseMixColumns(addRoundKey(inverseSubBytes(inverseShiftRows(cipherBlock)), round_no));
@@ -325,28 +324,29 @@ void AES::Decryptor::decryptCipherBlock(unsigned char *cipherBlock, unsigned cha
 	// cipherBlock has been decrypted through the AES key;
 
 	// Running the XOR with the previous block in the chain;
-	for (size_t i = 0; i < 16; i++){
-		plainText[blocksDecrypted * 16 + i] = cipherBlock[i] ^ chain[i];
+	for (size_t i = 0; i < 16; i++)
+	{
+		cipherBlock[i] = cipherBlock[i] ^ chain[i];
 	}
-	for (size_t i = 0; i < 16; i++){
-		std::cout << static_cast<char>(plainText[blocksDecrypted * 16 + i]);
+
+	for (size_t i = 0; i < 16;i++){
+		plainText.push_back(cipherBlock[i]);
 	}
+	// printer(cipherBlock);
 	blocksDecrypted++;
 }
 
-void AES::Decryptor::removePkcsPadding(unsigned char *plainText){
-	int bytesOffsetForLastBlock = (blocksDecrypted-1)*16;
-	unsigned char pkcsIdentifier = plainText[bytesOffsetForLastBlock+15];
-	size_t startingIndex = pkcsIdentifier;
-	startingIndex %= 16;
-	for (size_t i = bytesOffsetForLastBlock + startingIndex; i < bytesOffsetForLastBlock + 16;i++){
-		plainText[i] = 0x00;
+void AES::Decryptor::removePkcsPadding(){
+	int bytesOffset = (blocksDecrypted - 1) * 16;
+	int pkcsIdentifier = plainText[plainText.size()-1];
+	for (size_t i = bytesOffset + 16 - pkcsIdentifier; i < plainText.size();i++){
+		vector<unsigned char>::iterator it = plainText.begin() + i;
+		plainText.erase(it);
+		i--;
 	}
 }
 
 void AES::Decryptor::decryptCipher(){
-	size_t numberOfBlocks = sizeof cipherText / sizeof cipherText[0];
-
 	unsigned char *block = new unsigned char[16];
 
 	for (size_t i = 0; i < 16;i++){
@@ -354,7 +354,7 @@ void AES::Decryptor::decryptCipher(){
 	}
 	
 	decryptCipherBlock(block, initializationVector);
-	for (size_t i = 1; i < numberOfBlocks; i++)
+	for (size_t i = 1; i < blocks; i++)
 	{
 		unsigned char *prevBlock = new unsigned char[16];
 		for (size_t j = 0; j < 16; j++)
@@ -375,10 +375,16 @@ void stego::AESdecrypt() {
 
 int main(){
 	unsigned char cipherText[] = {
-		0x00, 0x40, 0x84, 0xbc, 0xf3, 0xbe, 0x6f, 0x05, 0xf9, 0xa0, 0xbb, 0xd3, 0xfc, 0xcd, 0xc8, 0x9b, 0xd4, 0x9c, 0x03, 0x0f, 0xf0, 0xe0, 0x69, 0x81, 0xa1, 0xf7, 0xcf, 0x8c, 0x22, 0x0a, 0x21, 0x09};
+		0x83,0xee,0x34,0x74,0xa8,0x09,0xd6,0xe0,0x87,0x23,0xa1,0xa8,0xa0,0x6b,0x0c,0xdd,0xba,0xef,0x98,0x8d,0x14,0xb3,0xed,0xbd,0xd5,0x44,0x59,0x16,0x21,0x45,0x54,0xc7,0xfe,0x49,0x95,0x65,0x1d,0xb7,0x65,0x01,0x6d,0x63,0x6d,0x47,0x9f,0x15,0x0b,0x85,0x03,0x91,0x07,0xc4,0x51,0xa4,0x6e,0xf0,0x4d,0x7e,0x0e,0xa2,0x75,0x65,0xe6,0x12};
+	unsigned char initializationVector[] = {"encryptionIntVec"};
 	unsigned char key[] = {"aesEncryptionKey"};
-	unsigned char iv[] = {"encryptionIntVec"};
-	AES::Decryptor *decryptor = new AES::Decryptor(cipherText, key, iv);
+	AES::Decryptor *decryptor = new AES::Decryptor(cipherText, initializationVector, key, 4);
 	decryptor->keyExpansion();
 	decryptor->decryptCipher();
+	decryptor->removePkcsPadding();
+
+	for (size_t i = 0; i < decryptor->plainText.size();i++){
+		std::cout << decryptor->plainText[i];
+	}
+	std::cout << std::endl;
 }
