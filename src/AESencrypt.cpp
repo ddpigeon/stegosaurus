@@ -1,4 +1,4 @@
-#include "../include/stego_main.h"
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -111,8 +111,6 @@ unsigned char* Rcon(int a){
     return b;
 }
 
-
-
 unsigned char* KeyExpansion(unsigned char* key,int round) {
     unsigned char **a = new unsigned char*[44];
     for(int i = 0; i < 44; ++i) {
@@ -128,7 +126,7 @@ unsigned char* KeyExpansion(unsigned char* key,int round) {
     }  
     
     //generate subkeys and store them in array
-    for(int i = 4; i < 44; i++) {
+    for(int i = 4; i < 44; i++){
         int round = i / 4;
         if(i % 4 == 0) {
             unsigned char b[4];
@@ -175,7 +173,8 @@ unsigned char* KeyExpansion(unsigned char* key,int round) {
             l++;
         }
     }
-          
+
+    delete []temp;          
     return b[round];
 }
 
@@ -205,6 +204,11 @@ void ShiftRows(unsigned char* state){
     tmp[7] = state[3];
     tmp[11] = state[7];
     tmp[15] = state[11];
+
+    for(int i = 0; i < 16; i++){
+        state[i] = tmp[i];
+    }
+    
 }
 
 
@@ -250,132 +254,118 @@ void AddRoundKey(unsigned char* state, unsigned char* key, int round){
 }
 
 
-void stego::AESencrypt(){
+
+void AESencrypt(){
     
     string message;
-    message_buffer>>message;
+    getline(cin,message);
+    
+    // Taking key from user
+    //unsigned char key[16] = {0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04};
+    cout << "Enter the key in hexadecimal form (32 characters): ";
+    string keyHex;
+    cin >> keyHex;
 
-    //taking key from user
-    int numRounds = 10;
+    // Convert hexadecimal string to bytes
     unsigned char key[16];
-    for(int i = 0;i<16;i++){
-        cin>>key[i];
-    }; 
-
-
-       
-
-    //padding
-    int l;
-    l = 16 - (message.length())%16;
-    for(int i = 0;i<l;i++){
-        message = message + char(l);
+    for (int i = 0; i < 16; i++) {
+        key[i] = stoi(keyHex.substr(2 * i, 2), nullptr, 16);
+    }
+    
+    // Padding
+    char c = 16 - (message.length()%16);
+    int n = message.length()%16;
+    for(int i = 0;i<16 - n;i++){
+        message += c;   
     }
 
-    //created 2d array for storing message as blocks of 16bytes each
-    l = (message.length())/16;
-    int k  = 0;
+    // Created 2D array for storing message as blocks of 16 bytes each
+    int l = (message.length() + 15) / 16; // Round up to nearest whole number
     unsigned char** messageArr = new unsigned char*[l];
-    for(int i = 0;i<l;i++){
+    for(int i = 0; i < l; i++){
         messageArr[i] = new unsigned char[16];
     }
-    //filled 2d array with the message
-    for(int i = 0;i<l;i++){
-        for(int j = 0;j<16;j++){
+    int k = 0;
+    for(int i = 0; i < l; i++){
+        for(int j = 0; j < 16; j++){
             messageArr[i][j] = message[k];
             k++;
         }
     }
-
-    //initialization vector for cbc
-    unsigned char iv[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-
-    //xor initialization vector with first message block
-
-    for(int i = 0;i<16;i++){
-        messageArr[0][i] ^= iv[i];
-    } 
-
-
-    //encrypt first block
-    unsigned char state[16];
-    for(int i = 0;i<16;i++){
-        state[i] = messageArr[0][i];
-    }
-  
-
-    //initial round
-    AddRoundKey(state,key,0);
-
-    //the intermediate rounds
-    for(int i = 1;i<numRounds;i++){
-        SubBytes(state);
-        ShiftRows(state);
-        MixColumns(state);
-        AddRoundKey(state,key,i);
-    }
-
-    //final round- omitted MixColumn()
-    SubBytes(state);
-    ShiftRows(state);
-    AddRoundKey(state,key,10);
-    for(int i = 0;i<16;i++){
-        messageArr[0][i] = state[i];
-    }
-
-    //encryption of first block ends
-
-
-
-    //encrypt remaining blocks
-
-    for(int i = 1;i<l;i++){
-
-        unsigned char state[16];
     
+    // Initialization vector for CBC
+    //unsigned char iv[16] = {1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4};
 
-        for(int j = 0;j<16;j++){
-            messageArr[i][j] ^= messageArr[i-1][j];
+    cout << "Enter the IV in hexadecimal form (32 characters): ";
+    string ivHex;
+    cin >> ivHex;
 
-        }
+    // Convert hexadecimal string to bytes
+    unsigned char iv[16];
+    for (int i = 0; i < 16; i++) {
+        iv[i] = stoi(ivHex.substr(2 * i, 2), nullptr, 16);
+    }
 
-        for(int j = 0;j<16;j++){
-            state[j] = messageArr[i][j];
-        }  
-
-    //initial round
-        AddRoundKey(state,key,0);
-
-    //the intermediate rounds
-        for(int j = 1;j<numRounds;j++){
-            SubBytes(state);
-           ShiftRows(state);
-            MixColumns(state);
-            AddRoundKey(state,key,i);
-        }   
-
-    //final round- omitted MixColumn()
-        SubBytes(state);
-        ShiftRows(state);
-        AddRoundKey(state,key,10);
-        for(int j = 0;j<16;j++){
-            messageArr[i][j] = state[j];
+    // Encrypt blocks
+    for(int i = 0; i < l; i++){
+        // XOR message block with IV
+        for(int j = 0; j < 16; j++){
+            messageArr[i][j] ^= iv[j];
         }
         
-    }
-    //encryption of remaining blocks ends
-
-    //pushing array contents into message string
-    k = 0;
-    for(int i = 0;i<l;i++){
-        for(int j = 0;j<16;j++){
-            message[k] = messageArr[i][j];
-            k++;
+        // Encrypt block
+        unsigned char state[16];
+        for(int j = 0; j < 16; j++){
+            state[j] = messageArr[i][j];
         }
-    }  
-    //push message onto message buffer   
-    
-    message_buffer<<message;
+        
+        // Initial round
+        AddRoundKey(state, key, 0);
+
+        // Intermediate rounds
+        for(int j = 1; j < 10; j++){
+            SubBytes(state);
+            ShiftRows(state);
+            MixColumns(state);
+            AddRoundKey(state, key, j);
+        }
+
+        // Final round
+        SubBytes(state);
+        ShiftRows(state);
+        AddRoundKey(state, key, 10);
+
+        // Update IV with ciphertext
+        for(int j = 0; j < 16; j++){
+            iv[j] = state[j];
+        }
+
+        // Copy ciphertext to messageArr
+        for(int j = 0; j < 16; j++){
+            messageArr[i][j] = state[j];
+        }
+    }
+
+    // Output ciphertext
+    for(int i = 0; i < l; i++){
+        for(int j = 0; j < 16; j++){
+            cout << hex << setw(2) << setfill('0') << (int)messageArr[i][j]<<" ";
+        }
+        cout << endl;
+    }
+
+    // Free memory
+    for(int i = 0; i < l; i++){
+        delete [] messageArr[i];
+    }
+    delete [] messageArr;
 }
 
+
+
+int main(int argc, char const *argv[])
+{
+    AESencrypt();
+    return 0;
+}
 
