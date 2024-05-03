@@ -1,4 +1,4 @@
-
+#include "../include/stego_main.h"
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -255,11 +255,11 @@ void AddRoundKey(unsigned char* state, unsigned char* key, int round){
 
 
 
-void AESencrypt(){
-    
+void stego::AESencrypt(){
     string message;
-    getline(cin,message);
-    
+    stego::fetch_message();
+    message = message_buffer.str();
+
     // Taking key from user
     //unsigned char key[16] = {0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04};
     cout << "Enter the key in hexadecimal form (32 characters): ";
@@ -354,6 +354,17 @@ void AESencrypt(){
         cout << endl;
     }
 
+    int m = 0;
+    for(int i = 0;i<l;i++){
+        for(int j = 0;j<16;j++){
+            message[m] = messageArr[i][j];
+            m++;
+        }
+    }
+
+    message_buffer.str(message);
+    
+
     // Free memory
     for(int i = 0; i < l; i++){
         delete [] messageArr[i];
@@ -365,7 +376,7 @@ void AESencrypt(){
 
 int main(int argc, char const *argv[])
 {
-    AESencrypt();
+    
     return 0;
 }
 
