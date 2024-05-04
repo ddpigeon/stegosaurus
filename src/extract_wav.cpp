@@ -9,6 +9,7 @@ void stego::extract_wav() {
     int index = 12;
 
     // Iterate through subchunks until "data" subchunk is found
+    int input_size = input_buffer.str().size()
     while (index < input_size - 8) {
         // Read the subchunk ID and size
         string subchunk_id(input_buffer + index, 4);
