@@ -35,7 +35,7 @@ void stego::extract_wav() {
                         message_byte <<= 2;
                     }
                 }
-                message_buffer.push_back(message_byte);
+                message_buffer << message_byte;
             }
             break;
         }
