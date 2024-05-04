@@ -346,14 +346,6 @@ void stego::AESencrypt(){
         }
     }
 
-    // Output ciphertext
-    for(int i = 0; i < l; i++){
-        for(int j = 0; j < 16; j++){
-            cout << hex << setw(2) << setfill('0') << (int)messageArr[i][j]<<" ";
-        }
-        cout << endl;
-    }
-
     int m = 0;
     for(int i = 0;i<l;i++){
         for(int j = 0;j<16;j++){
