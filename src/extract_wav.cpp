@@ -3,7 +3,7 @@
 void stego::extract_wav() {
     encryption_bit = 0;
     compression_bit = 0;
-    message_size = 0;
+    int message_size = 0;
 
     // Skip the WAV header (12 bytes)
     int index = 12;
