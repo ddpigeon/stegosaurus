@@ -1,60 +1,44 @@
 #include "../include/stego_main.h"
-#include <unordered_map>
 
 using namespace std;
 
-string stego::compress() {
+void stego::compress() {
     // Assuming 'message_buffer' is a member variable of the 'stego' class
 
-    vector<int> codes_of_dictionary;
+    string input;
+    getline(message_buffer, input); // Read the entire content of message_buffer into input
 
-    // Read bytes from message_buffer and store as integers
-    while (true) {
-        int integer = 0;
-        char byte1, byte2, byte3, bits1, bits2;
-
-        message_buffer >> byte1;
-        if (message_buffer.eof()) break; // Check if last character read
-        integer = byte1 << 4;
-
-        message_buffer >> byte2;
-        bits1 = byte2 >> 4;
-        integer |= bits1;
-        codes_of_dictionary.push_back(integer);
-
-        if (message_buffer.eof()) break; 
-        bits2 = byte2 << 4;
-        integer = bits2 << 4;
-        message_buffer >> byte3; 
-        integer |= byte3;
-        codes_of_dictionary.push_back(integer);
-
-        if (message_buffer.eof()) break; 
+  
+    vector<string> dictionary;
+    for (int i = 0; i < 256; ++i) {
+        string ch(1, static_cast<char>(i));
+        dictionary.push_back(ch);
     }
-
-    // LZW compression logic
-    unordered_map<string, int> dictionary;
-    int next_code = 256;
 
     string output;
     string current_string;
-
-    for (int code : codes_of_dictionary) {
-        string entry;
-        if (dictionary.find(entry) == dictionary.end()) {
-            entry = current_string + current_string[0];
+    for (char c : input) {
+        string combined = current_string + c;
+        if (find(dictionary.begin(), dictionary.end(), combined) != dictionary.end()) {
+            // If combined is already in the dictionary, extend the current string
+            current_string = combined;
         } else {
-            output += to_string(dictionary[current_string]) + " ";
-            if (next_code < 4096) {
-                dictionary[current_string + entry[0]] = next_code++;
+            // Otherwise, output the code for the current string and add combined to the dictionary
+            output += to_string(find(dictionary.begin(), dictionary.end(), current_string) - dictionary.begin()) + " ";
+            if (dictionary.size() < 4096) {
+                dictionary.push_back(combined);
             }
-            current_string = entry;
+            current_string = string(1, c); // Start a new string with the current character
         }
     }
 
-    // Handle the last code
-    output += to_string(dictionary[current_string]);
+    // Output the code for the last current_string
+    if (!current_string.empty()) {
+        output += to_string(find(dictionary.begin(), dictionary.end(), current_string) - dictionary.begin());
+    }
 
-   
-    return output;
+    // Overwrite the message buffer with the compressed output
+    message_buffer.clear(); // Clear the buffer
+    message_buffer.str(""); // Clear the content
+    message_buffer << output; // Write the compressed output
 }
