@@ -1,46 +1,56 @@
 #include "../include/stego_main.h"
+#include <cstdint>
+#include <iostream>
+using namespace std;
 
 void stego::extract_wav() {
-    encryption_bit = 0;
-    compression_bit = 0;
-    int message_size = 0;
 
-    // Skip the WAV header (12 bytes)
-    int index = 12;
+    int current_index = 12; //header
+    string input_str = input_buffer.str();
 
-    // Iterate through subchunks until "data" subchunk is found
-    int input_size = input_buffer.str().size()
-    while (index < input_size - 8) {
-        // Read the subchunk ID and size
-        string subchunk_id(input_buffer + index, 4);
-        int subchunk_size = *((int*)(input_buffer + index + 4));
+    while (current_index < input_str.size()) {
+        string subchunk_id = input_str.substr(current_index, 4);
+        current_index += 4;
+        int subchunk_size = *(int *) &input_str[current_index];
+        current_index += 4;
 
-        // If it's the "data" subchunk, extract message
-        if (subchunk_id == "data") {
-            // Read encryption and compression bits from the first data byte
-            char first_data_byte = input_buffer[index + 8];
-            encryption_bit = first_data_byte & 0b00000001;
-            compression_bit = (first_data_byte & 0b00000010) >> 1;
+        if(subchunk_id != "data") current_index += subchunk_size;
 
-            // Read message size (4 bytes)
-            message_size = *((int*)(input_buffer + index + 9));
+        else {
+            // check for encryption/compression
+            uint8_t first_bit = input_str[current_index];
+            cout << hex << (int) first_bit << endl;
+            encryption_bit = first_bit & 0x01;
+            compression_bit = first_bit & 0x02;
+            current_index++;
 
-            // Extract the message
-            for (int i = 0; i < message_size; ++i) {
-                char message_byte = 0;
-                for (int j = 0; j < 4; ++j) {
-                    char byte = input_buffer[index + 13 + (i * 4) + j];
-                    char pattern = byte & 0b00000011;
-                    message_byte |= pattern;
-                    if (j < 3) {
-                        message_byte <<= 2;
-                    }
-                }
-                message_buffer << message_byte;
+            // Message size
+            uint32_t messageSize = 0;
+            for (int i = 0; i < 4; i++) {
+                uint8_t message_size_byte = 
+                    ((input_str[current_index] & 0x03) << 6) |
+                    ((input_str[current_index + 1] & 0x03) << 4) |
+                    ((input_str[current_index + 2] & 0x03)<< 2) |
+                    ((input_str[current_index + 3] & 0x03));
+
+
+                messageSize |= message_size_byte << (8 * (3-i));
+                current_index += 4;
             }
-            break;
+
+
+            for (int i = 0; i < messageSize; i++) {
+                uint8_t message_byte = 0;
+                for (int j = 0; j < 4; j++) {
+                    message_byte <<= 2;
+                    message_byte |= (input_str[current_index + j] & 0x03);
+                }
+                current_index += 4;
+                message_buffer.put(message_byte);
+            }
         }
-        // Move to the next subchunk
-        index += 8 + subchunk_size;
+
     }
+    message_buffer.seekg(0);
+
 }

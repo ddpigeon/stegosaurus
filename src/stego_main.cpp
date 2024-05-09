@@ -53,6 +53,9 @@ void stego::extract() {
 
     if (encryption_bit) AESdecrypt();
     if (compression_bit) decompress();
+
+    output_buffer << message_buffer.rdbuf();
+    write_output();
 }
 
 void stego::standalone_compress() {
