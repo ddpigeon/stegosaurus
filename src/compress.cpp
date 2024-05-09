@@ -1,44 +1,59 @@
 #include "../include/stego_main.h"
-
+#include <cstdint>
+#include <iostream>
+#include <unordered_map>
 using namespace std;
 
 void stego::compress() {
-    // Assuming 'message_buffer' is a member variable of the 'stego' class
+    // LZW compression logic
 
-    string input;
-    getline(message_buffer, input); // Read the entire content of message_buffer into input
-
+    string message_string = message_buffer.str();
+    //cout << "Encoding\n"; 
+    unordered_map<string, int> encoding_table; 
+    for (int i = 0; i <= 255; i++) { 
+        string ch = ""; 
+        ch += char(i); 
+        encoding_table[ch] = i; 
+    } 
   
-    vector<string> dictionary;
-    for (int i = 0; i < 256; ++i) {
-        string ch(1, static_cast<char>(i));
-        dictionary.push_back(ch);
-    }
+    string p = "", c = ""; 
+    p += message_string[0]; 
+    int code = 256; 
+    vector<int> output_code; 
+    //cout << "String\tOutput_Code\tAddition\n"; 
+    for (int i = 0; i < message_string.length(); i++) { 
+        if (i != message_string.length() - 1) c += message_string[i + 1]; 
+        if (encoding_table.find(p + c) != encoding_table.end()) p += c; 
 
-    string output;
-    string current_string;
-    for (char c : input) {
-        string combined = current_string + c;
-        if (find(dictionary.begin(), dictionary.end(), combined) != dictionary.end()) {
-            // If combined is already in the dictionary, extend the current string
-            current_string = combined;
-        } else {
-            // Otherwise, output the code for the current string and add combined to the dictionary
-            output += to_string(find(dictionary.begin(), dictionary.end(), current_string) - dictionary.begin()) + " ";
-            if (dictionary.size() < 4096) {
-                dictionary.push_back(combined);
-            }
-            current_string = string(1, c); // Start a new string with the current character
-        }
-    }
+        else { 
+            //cout << p << "\t" << encoding_table[p] << "\t\t" 
+            //     << p + c << "\t" << code << endl; 
+            output_code.push_back(encoding_table[p]); 
+            encoding_table[p + c] = code; 
+            code++; 
+            p = c; 
+        } 
+        c = ""; 
+    } 
+    //cout << p << "\t" << encoding_table[p] << endl; 
+    output_code.push_back(encoding_table[p]); 
+    message_buffer.str("");
 
-    // Output the code for the last current_string
-    if (!current_string.empty()) {
-        output += to_string(find(dictionary.begin(), dictionary.end(), current_string) - dictionary.begin());
-    }
+    for (int i = 0; i < output_code.size(); i++) cout << hex << output_code[i] << " ";
+    cout << endl;
 
-    // Overwrite the message buffer with the compressed output
-    message_buffer.clear(); // Clear the buffer
-    message_buffer.str(""); // Clear the content
-    message_buffer << output; // Write the compressed output
+    //Write output code to message buffer
+    if (output_code.size() % 2 == 1) output_code.push_back(0); // Pad with zero in case of odd number of codes
+    
+    for (int i = 0; i < output_code.size(); i += 2) {
+        uint32_t c1 = output_code[i];
+        uint32_t c2 = output_code[i+1];
+
+        char coded_bytes[3];
+        coded_bytes[0] = c1 >> 4;
+        coded_bytes[2] = c2 % 256;
+        coded_bytes[1] = (c1 % 16) << 4 | (c2 >> 8);
+
+        message_buffer.write(coded_bytes, 3);
+    }
 }

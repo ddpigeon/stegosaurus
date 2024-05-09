@@ -46,6 +46,8 @@ int main(int ac, char* av[]) {
         string cmnd = vm["perform-command"].as<string>();
         if (cmnd == "hf") func = 1;
         else if (cmnd == "ef") func = 2;
+        else if (cmnd == "cf") func = 3;
+        else if (cmnd == "df") func = 4;
 
         else if (cmnd == "h"); // do nothing, should be taken care of above 
 
@@ -86,8 +88,8 @@ int main(int ac, char* av[]) {
         else throw runtime_error("No input message file path!");
     }
 
-    // Same as above, but for extract file 
-    else if (func == 2) {
+    // Same as above, but for extract file, and the standalone compressions 
+    else if (func == 2 || func == 3 || func == 4) {
         if (vm.count("input-file")) {
             input_path = vm["input-file"].as<string>();
             file_paths.push_back(input_path);
@@ -112,6 +114,14 @@ int main(int ac, char* av[]) {
 
     else if (func == 2) {
         stegosaurus.extract();
+    }
+
+    else if (func == 3) {
+        stegosaurus.standalone_compress();
+    }
+
+    else if (func == 4) {
+        stegosaurus.standalone_decompress();
     }
 
 

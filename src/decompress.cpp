@@ -1,36 +1,48 @@
 #include "../include/stego_main.h"
+#include <cstdint>
+#include <iostream>
 #include <unordered_map>
 using namespace std;
+
 void stego::decompress(){
-   
-     vector <int> codes_of_dictionary;
+
+    vector <int> codes_of_dictionary;
+    int buffer_index = 0;
+    message_buffer.seekg(0, ios::end);
+    int buf_size = message_buffer.tellg();
+    message_buffer.seekg(ios::beg);
+
+
     //read the message_buffer until end and extract codes for dictionary
-       while (true) {
+    while (buffer_index < buf_size) {
         int integer = 0;
         int integer1 = 0;
-        char byte1, byte2, byte3;
-        char bits1, bits2;
+        uint8_t bytes[3];
+        uint8_t bits1, bits2;
 
         // Reading 1 byte from stringstream
-        message_buffer >> byte1;
-        if (message_buffer.eof()) break; // Check if last character read
-        integer = (byte1) << 4;
+        message_buffer.read((char*) bytes, 3);
+        buffer_index += 3;
+        integer = (bytes[0]) << 4;
 
-        message_buffer >> byte2;
         // Adding first 4 bits of 2nd byte to integer
-        bits1 = byte2 >> 4;
+        bits1 = bytes[1] >> 4;
         integer |= bits1;
         codes_of_dictionary.push_back(integer);
-        if (message_buffer.eof()) break; // Check if last character read
 
         // Reading last 4 bits of 2nd byte and appending with 3rd byte
-        bits2 = byte2 << 4;
+        bits2 = bytes[1] << 4;
         integer1 = bits2 << 4;
-        message_buffer >> byte3; 
-        integer1 |= byte3;
+        integer1 |= bytes[2];
+
         codes_of_dictionary.push_back(integer1);
-         if (message_buffer.eof()) break; // Check if last character read
+        //if (message_buffer.eof()) break; // Check if last character read
     }
+
+    for (int i = 0; i < codes_of_dictionary.size(); i++) cout << hex << codes_of_dictionary[i] << " ";
+    cout << endl;
+
+
     //creating dictionary
     unordered_map<int, string> dictionary;
     int dictSize = 256;
@@ -67,7 +79,7 @@ void stego::decompress(){
     }
 
     //storing final output string in message_buffer
-    message_buffer << output;
-
+    message_buffer.str(output);
+    //cout << message_buffer.rdbuf();
 
 }

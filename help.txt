@@ -3,12 +3,15 @@ Usage: stego <command> [arguments]
 <Commands>
   hf : hide a file in another file (requires --if, --im and -o arguments)
   ef : extract a file from an input file (requires --if and -o arguments)
+  cf : compress a file (requires --if and -o arguments)
+  df : decompress a file (requires --if and -o arguments)
   h, -h, --help : display help page
 
+
 <Arguments>
-    --if <filename> : select the input file to extract from / hide the message in (must be a .png or .wav)
+    --if <filename> : select the input file to extract from / hide the message in (must be a .png or .wav for steganography)
     --im <filename> : select the message file to be hidden
     -o <filename> : select the file to write the output to
-    -e : if used with hf, it encrypts the data using SHA-256 before hiding
+    -e : if used with hf, it encrypts the data using AES-128 before hiding
     -c : if used with hf, it compresses the data
 

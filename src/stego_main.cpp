@@ -29,6 +29,8 @@ stego::stego(vector<string> &files, int encrypt, int compress) {
 // Hide and extract
 void stego::hide() {
     if (check_if_wav_or_png(input_path) == 0) throw runtime_error("Invalid input file");
+    fetch_input();
+    fetch_message();
 
     // Order of running is compress -> encrypt -> hide
 
@@ -37,11 +39,12 @@ void stego::hide() {
 
     if (check_if_wav_or_png(input_path) == 1) hide_png();
     else if (check_if_wav_or_png(input_path) == 2) hide_wav();
+    write_output();
 }
 
 void stego::extract() {
     if (check_if_wav_or_png(input_path) == 0) throw runtime_error("Invalid input file");
-    check_ce();
+    fetch_input();
 
     // Order is extract -> decrypt -> decompress
 
@@ -52,6 +55,22 @@ void stego::extract() {
     if (compression_bit) decompress();
 }
 
+void stego::standalone_compress() {
+    fetch_input();
+    message_buffer << input_buffer.rdbuf();
+    compress();
+    output_buffer << message_buffer.rdbuf();
+    write_output();
+}
+
+void stego::standalone_decompress() {
+    fetch_input();
+    message_buffer << input_buffer.rdbuf();
+    decompress();
+    output_buffer << message_buffer.rdbuf();
+    //cout << output_buffer.rdbuf();
+    write_output();
+}
 
 
 int stego::check_if_wav_or_png(string &file_path) {
@@ -72,7 +91,7 @@ int stego::check_if_wav_or_png(string &file_path) {
 void stego::write_output() {
     // Writes output buffer to output file
 
-    fstream outputfile(output_path, ios::binary);
+    ofstream outputfile(output_path, ios::binary);
     outputfile << output_buffer.rdbuf();
     outputfile.close();
 }
@@ -89,9 +108,9 @@ void stego::fetch_input() {
 }
 
 void stego::fetch_message() {
-    // Reads from input file to input buffer
+    // Reads from message file to message buffer
 
-    fstream messagefile(message_path, ios::binary);
+    ifstream messagefile(message_path, ios::binary);
     message_buffer << messagefile.rdbuf();
     messagefile.close();
 }
@@ -105,3 +124,4 @@ void stego::check_ce() {
 }
 
      
+

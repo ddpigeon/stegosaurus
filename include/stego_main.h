@@ -18,6 +18,11 @@ class stego {
         void decompress();
         void AESdecrypt();
         void AESencrypt();
+        
+        //Standalone compression/decompression
+        void standalone_compress();
+        void standalone_decompress();
+
 
         // Deals with the steganography bit
         // Convenient wrappers for the actual thing
