@@ -379,9 +379,9 @@ void stego::AESdecrypt() {
 
 	std::string initializationVectorString;
 	std::string keyString;
-	std::cout << "Enter the Initialization Vector:";
+	std::cout << "Enter the Initialization Vector: ";
 	std::cin >> initializationVectorString;
-	std::cout << "Enter the Key:";
+	std::cout << "Enter the Key: ";
 	std::cin >> keyString;
 
 	const char *initializationVectorCString = initializationVectorString.c_str();
@@ -402,27 +402,11 @@ void stego::AESdecrypt() {
 	decryptor->decryptCipher();
 	decryptor->removePkcsPadding();
 
+    message_buffer.str("");
 	char *plainTextFromCipher = new char[decryptor->plainText.size()];
-	for (size_t i = 0; i < decryptor->plainText.size();i++){
+	for (size_t i = 0; i < decryptor->plainText.size() / 2; i++){
 		plainTextFromCipher[i] = decryptor->plainText[i];
+        message_buffer.put(plainTextFromCipher[i]);
 	}
 
-	std::string decryptedString{plainTextFromCipher};
-	message_buffer.str(decryptedString);
-}
-
-int main(){
-	// unsigned char cipherText[] = {
-	// 	0x83,0xee,0x34,0x74,0xa8,0x09,0xd6,0xe0,0x87,0x23,0xa1,0xa8,0xa0,0x6b,0x0c,0xdd,0xba,0xef,0x98,0x8d,0x14,0xb3,0xed,0xbd,0xd5,0x44,0x59,0x16,0x21,0x45,0x54,0xc7,0xfe,0x49,0x95,0x65,0x1d,0xb7,0x65,0x01,0x6d,0x63,0x6d,0x47,0x9f,0x15,0x0b,0x85,0x03,0x91,0x07,0xc4,0x51,0xa4,0x6e,0xf0,0x4d,0x7e,0x0e,0xa2,0x75,0x65,0xe6,0x12};
-	// unsigned char initializationVector[] = {"encryptionIntVec"};
-	// unsigned char key[] = {"aesEncryptionKey"};
-	// AES::Decryptor *decryptor = new AES::Decryptor(cipherText, initializationVector, key, 4);
-	// decryptor->keyExpansion();
-	// decryptor->decryptCipher();
-	// decryptor->removePkcsPadding();
-
-	// for (size_t i = 0; i < decryptor->plainText.size();i++){
-	// 	std::cout << decryptor->plainText[i];
-	// }
-	// std::cout << std::endl;
 }

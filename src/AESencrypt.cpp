@@ -1,5 +1,4 @@
 #include "../include/stego_main.h"
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -262,14 +261,14 @@ void stego::AESencrypt(){
 
     // Taking key from user
     //unsigned char key[16] = {0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04,0x01,0x02,0x03,0x04};
-    cout << "Enter the key in hexadecimal form (32 characters): ";
-    string keyHex;
-    cin >> keyHex;
+    cout << "Enter the key string (16 characters): ";
+    string keyString;
+    cin >> keyString;
 
     // Convert hexadecimal string to bytes
     unsigned char key[16];
     for (int i = 0; i < 16; i++) {
-        key[i] = stoi(keyHex.substr(2 * i, 2), nullptr, 16);
+        key[i] = keyString[i];
     }
     
     // Padding
@@ -296,14 +295,14 @@ void stego::AESencrypt(){
     // Initialization vector for CBC
     //unsigned char iv[16] = {1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4};
 
-    cout << "Enter the IV in hexadecimal form (32 characters): ";
-    string ivHex;
-    cin >> ivHex;
+    cout << "Enter the IV string (16 characters): ";
+    string ivString;
+    cin >> ivString;
 
     // Convert hexadecimal string to bytes
     unsigned char iv[16];
     for (int i = 0; i < 16; i++) {
-        iv[i] = stoi(ivHex.substr(2 * i, 2), nullptr, 16);
+        iv[i] = ivString[i];
     }
 
     // Encrypt blocks
@@ -355,7 +354,6 @@ void stego::AESencrypt(){
     }
 
     message_buffer.str(message);
-    
 
     // Free memory
     for(int i = 0; i < l; i++){
@@ -363,12 +361,3 @@ void stego::AESencrypt(){
     }
     delete [] messageArr;
 }
-
-
-
-int main(int argc, char const *argv[])
-{
-    
-    return 0;
-}
-
