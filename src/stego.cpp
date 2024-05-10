@@ -36,6 +36,7 @@ int main(int ac, char* av[]) {
         // Read help text, and output it
         ifstream helptext("help.txt");
         if (helptext.is_open()) cout << helptext.rdbuf();
+        return 0;
     }
 
     // Deals with whether we hide or extract
