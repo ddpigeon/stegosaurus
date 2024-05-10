@@ -38,8 +38,10 @@ void stego::hide() {
     if (encryption_bit) AESencrypt();
 
     if (check_if_wav_or_png(input_path) == 1) hide_png();
-    else if (check_if_wav_or_png(input_path) == 2) hide_wav();
-    write_output();
+    else if (check_if_wav_or_png(input_path) == 2) {
+        hide_wav();
+        write_output();
+    }
 }
 
 void stego::extract() {
@@ -53,7 +55,6 @@ void stego::extract() {
 
     if (encryption_bit) AESdecrypt();
     if (compression_bit) decompress();
-
     output_buffer << message_buffer.rdbuf();
     write_output();
 }
