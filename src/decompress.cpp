@@ -39,10 +39,6 @@ void stego::decompress(){
         //if (message_buffer.eof()) break; // Check if last character read
     }
 
-    for (int i = 0; i < codes_of_dictionary.size(); i++) cout << hex << codes_of_dictionary[i] << " ";
-    cout << endl;
-
-
     //creating dictionary
     unordered_map<int, string> dictionary;
     int dictSize = 256;

@@ -39,9 +39,6 @@ void stego::compress() {
     output_code.push_back(encoding_table[p]); 
     message_buffer.str("");
 
-    for (int i = 0; i < output_code.size(); i++) cout << hex << output_code[i] << " ";
-    cout << endl;
-
     //Write output code to message buffer
     if (output_code.size() % 2 == 1) output_code.push_back(0); // Pad with zero in case of odd number of codes
     
